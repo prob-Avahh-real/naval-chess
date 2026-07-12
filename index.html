@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#F5EDDC">
+  <title>万船齐发 · 棋</title>
+
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+    :root{
+      --paper:       #F5EDDC;
+      --paper-dark:  #E8DCC8;
+      --ink:         #1A1A1A;
+      --ink-mid:     #4A4A4A;
+      --cinnabar:    #C41E3A;
+      --indigo:      #1B3A5C;
+      --wave:        #2C5F7C;
+      --gold:        #8B7355;
+    }
+
+    html,body{
+      width:100%;height:100%;overflow:hidden;
+      font-family:"KaiTi","STKaiti","Kaiti SC","Songti SC","Noto Serif SC",serif;
+      background:var(--paper);color:var(--ink);
+      -webkit-tap-highlight-color:transparent;
+      -webkit-user-select:none;user-select:none;
+      touch-action:manipulation;
+    }
+
+    /* ── paper grain ───────────────────────────── */
+    body::before{
+      content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+      background:
+        repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(139,115,85,.03) 2px,rgba(139,115,85,.03) 4px),
+        repeating-linear-gradient(90deg,transparent,transparent 2px,rgba(139,115,85,.02) 2px,rgba(139,115,85,.02) 4px);
+    }
+
+    @media(min-width:600px){
+      body::after{
+        content:'万 船 齐 发';position:fixed;right:12px;top:50%;
+        transform:translateY(-50%);writing-mode:vertical-rl;
+        font-size:30px;color:rgba(196,30,58,.06);
+        letter-spacing:14px;pointer-events:none;z-index:0;
+      }
+    }
+
+    /* ── layout ────────────────────────────────── */
+    .app{
+      position:relative;z-index:1;display:flex;flex-direction:column;
+      height:100%;height:100dvh;max-width:520px;margin:0 auto;
+      padding:6px 8px;gap:2px;
+    }
+
+    /* ── header ────────────────────────────────── */
+    .header{
+      display:flex;align-items:center;justify-content:center;
+      padding:2px 8px;gap:6px;flex-shrink:0;
+    }
+    .title{
+      font-size:clamp(17px,4vw,24px);font-weight:bold;
+      letter-spacing:5px;text-align:center;
+    }
+    .title::after{
+      content:'';display:block;width:55%;height:2px;
+      background:var(--cinnabar);margin:2px auto 0;opacity:.45;
+    }
+    .seal-badge{
+      font-size:11px;color:var(--cinnabar);
+      border:1.5px solid var(--cinnabar);
+      padding:2px 5px;letter-spacing:2px;
+      writing-mode:vertical-rl;opacity:.65;
+    }
+
+    /* ── info ──────────────────────────────────── */
+    .info-bar{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:2px 10px;gap:6px;flex-shrink:0;font-size:14px;
+    }
+    .turn{
+      display:flex;align-items:center;gap:6px;font-weight:bold;
+      font-size:15px;padding:5px 12px;border:2px solid var(--ink);
+      background:var(--paper);
+    }
+    .turn::before{
+      content:'';width:13px;height:13px;border-radius:50%;
+      border:2px solid var(--ink);flex-shrink:0;
+    }
+    .turn.white::before{background:#FBF7EE}
+    .turn.black::before{background:var(--ink)}
+
+    .check-warn{
+      display:none;color:var(--cinnabar);font-weight:bold;font-size:14px;
+      animation:pulse .9s ease-in-out infinite;padding:3px 10px;
+      border:1.5px solid var(--cinnabar);
+    }
+    .check-warn.show{display:block}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+    /* ── board ─────────────────────────────────── */
+    .board-wrap{
+      flex:1;display:flex;align-items:center;justify-content:center;
+      min-height:0;padding:0;
+    }
+    #chess-board{
+      max-width:100%;max-height:100%;cursor:pointer;
+    }
+
+    /* ── hints ─────────────────────────────────── */
+    .hints{
+      text-align:center;font-size:12px;color:var(--ink-mid);
+      padding:2px 6px;min-height:20px;flex-shrink:0;
+    }
+    .hint-capture{color:var(--cinnabar)}
+    .hint-move{color:var(--ink-mid)}
+    .hint-empty{color:var(--gold);font-style:italic}
+
+    /* ── captures ──────────────────────────────── */
+    .captures{
+      display:flex;justify-content:space-between;
+      padding:0 10px;font-size:17px;min-height:24px;flex-shrink:0;
+    }
+    .captured-piece{display:inline-block;margin:0 1px}
+    .captured-piece.white{color:var(--ink)}
+    .captured-piece.black{color:var(--cinnabar)}
+
+    /* ── status ────────────────────────────────── */
+    .status{
+      text-align:center;font-size:13px;padding:1px;
+      min-height:18px;flex-shrink:0;font-weight:bold;
+    }
+    .status.over{color:var(--cinnabar);font-size:15px}
+
+    /* ── buttons ───────────────────────────────── */
+    .ctrls{
+      display:flex;justify-content:center;gap:8px;
+      padding:5px 8px;flex-shrink:0;flex-wrap:wrap;
+    }
+    .btn{
+      font-family:inherit;font-size:13px;padding:7px 14px;
+      border:2px solid var(--ink);background:var(--paper);color:var(--ink);
+      cursor:pointer;letter-spacing:2px;transition:all .15s;
+    }
+    .btn:active{background:var(--ink);color:var(--paper)}
+    .btn.primary{background:var(--ink);color:var(--paper)}
+    .btn.primary:active{background:var(--cinnabar);border-color:var(--cinnabar)}
+
+    /* ── history ───────────────────────────────── */
+    .history-wrap{
+      flex-shrink:0;max-height:66px;overflow:hidden;
+      border-top:1px solid rgba(26,26,26,.12);margin:0 10px;
+    }
+    .history-label{
+      font-size:10px;color:var(--gold);padding:2px 0;letter-spacing:2px;
+    }
+    .history{
+      font-size:11px;line-height:1.5;max-height:46px;overflow-y:auto;
+      color:var(--ink-mid);
+      font-family:"SF Mono","Cascadia Code","Menlo",monospace;
+    }
+    .move-num{color:var(--gold);font-weight:bold}
+    .move-entry{padding:0 2px}
+
+    /* ── promotion ─────────────────────────────── */
+    .promo-dlg{
+      display:none;position:fixed;z-index:100;
+      background:var(--paper);border:3px solid var(--ink);
+      padding:7px;flex-direction:column;gap:4px;
+      box-shadow:4px 4px 0 rgba(0,0,0,.18);
+    }
+    .promo-dlg.active{display:flex}
+    .promo-option{
+      width:46px;height:46px;display:flex;
+      align-items:center;justify-content:center;
+      font-size:22px;font-weight:bold;cursor:pointer;
+      border:2px solid var(--ink);background:var(--paper);
+      font-family:inherit;
+    }
+    .promo-option:active{background:var(--cinnabar);color:var(--paper)}
+
+    /* ── responsive ────────────────────────────── */
+    @media(max-width:380px){
+      .title{font-size:15px;letter-spacing:2px}
+      .btn{padding:5px 10px;font-size:11px}
+      .info-bar{font-size:12px}
+      .turn{font-size:13px;padding:4px 10px}
+    }
+
+    @media(max-height:500px) and (orientation:landscape){
+      .app{flex-direction:row;flex-wrap:wrap;align-items:center;
+           justify-content:center;gap:2px}
+      .header{width:100%;padding:1px}
+      .title{font-size:13px}
+      .board-wrap{flex:0 0 auto}
+      .history-wrap,.captures{display:none}
+      .info-bar{width:100%;justify-content:center}
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <header class="header">
+    <h1 class="title">万船齐发</h1>
+    <span class="seal-badge">海战棋</span>
+  </header>
+
+  <div class="info-bar">
+    <span class="turn white" id="turn-indicator">白方行棋</span>
+    <span class="check-warn" id="check-warning">将军</span>
+  </div>
+
+  <div class="board-wrap">
+    <canvas id="chess-board"></canvas>
+  </div>
+
+  <div class="hints" id="move-hints"></div>
+
+  <div class="captures">
+    <span id="white-captures"></span>
+    <span id="black-captures"></span>
+  </div>
+
+  <div class="status" id="game-status"></div>
+
+  <div class="ctrls">
+    <button class="btn primary" id="btn-new-game">新局</button>
+    <button class="btn" id="btn-flip">翻转棋盘</button>
+    <button class="btn" id="btn-undo">悔棋</button>
+  </div>
+
+  <div class="history-wrap">
+    <div class="history-label">棋 谱</div>
+    <div class="history" id="move-history"></div>
+  </div>
+</div>
+
+<div class="promo-dlg" id="promotion-dialog">
+  <button class="promo-option" data-piece="queen">战</button>
+  <button class="promo-option" data-piece="rook">炮</button>
+  <button class="promo-option" data-piece="bishop">巡</button>
+  <button class="promo-option" data-piece="knight">快</button>
+</div>
+
+<script src="js/chess-engine.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
