@@ -1,0 +1,11 @@
+{
+  "appId": "com.skat.navalchess",
+  "appName": "万船齐发",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}
